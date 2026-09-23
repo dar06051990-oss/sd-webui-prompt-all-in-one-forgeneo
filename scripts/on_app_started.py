@@ -1,6 +1,7 @@
 import gradio as gr
 import os
 import sys
+import traceback
 from pathlib import Path
 from modules import script_callbacks, extra_networks, prompt_parser
 from fastapi import FastAPI, Body, Request, Response
@@ -398,7 +399,8 @@ def on_app_started(_: gr.Blocks, app: FastAPI):
         if translate_api == 'mbart50':
             mbart50_initialize()
     except Exception:
-        pass
+        print("[sd-webui-prompt-all-in-one] Automatic mBART50 initialization failed:")
+        traceback.print_exc()
 
 
 try:
