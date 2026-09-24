@@ -1,5 +1,6 @@
 import json
 import hashlib
+import traceback
 from scripts.physton_prompt.get_lang import get_lang
 from scripts.physton_prompt.get_translate_apis import get_translate_apis, unprotected_translate_api_config
 from scripts.physton_prompt.translator.alibaba_translator import AlibabaTranslator
@@ -146,5 +147,6 @@ def translate(text, from_lang, to_lang, api, api_config=None):
             caches[_cache_name(text)] = translated_text
             return _translate_result(True, '', translated_text)
     except Exception as e:
-        # print(e)
+        print("[sd-webui-prompt-all-in-one] Translation failed:")
+        traceback.print_exc()
         return _translate_result(False, str(e), '')

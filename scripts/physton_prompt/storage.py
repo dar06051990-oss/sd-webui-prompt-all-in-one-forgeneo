@@ -1,6 +1,8 @@
 import os
 import json
 import time
+import shutil
+from pathlib import Path
 
 
 class Storage:
@@ -9,22 +11,97 @@ class Storage:
     def __init__():
         Storage.__dispose_all_locks()
 
-    def __get_storage_path():
+    def import_from_old(overwrite=False):
+        """
+        Import JSON data from older sibling versions of the extension.
+
+        Returns a dict with import statistics. By default, existing files in
+        the current storage are preserved. If overwrite=True, matching JSON
+        files are replaced by the older-extension copies.
+        """
+        storage_path = Storage.__get_storage_path(skip_auto_import=True)
+        current_root = Path(storage_path).resolve().parent
+
+        candidates = [
+            current_root.parent / 'sd-webui-prompt-all-in-one' / 'storage',
+            current_root.parent / 'sd-webui-prompt-all-in-one-forgeneo' / 'storage',
+        ]
+
+        imported = []
+        overwritten = []
+        skipped = []
+        sources_found = []
+
+        for candidate in candidates:
+            candidate = candidate.resolve()
+            if candidate == Path(storage_path).resolve():
+                continue
+            if not candidate.exists() or not candidate.is_dir():
+                continue
+
+            sources_found.append(str(candidate))
+
+            try:
+                for src_file in candidate.iterdir():
+                    if not src_file.is_file():
+                        continue
+                    if src_file.suffix.lower() != '.json':
+                        continue
+
+                    dst_file = Path(storage_path) / src_file.name
+
+                    if dst_file.exists() and not overwrite:
+                        skipped.append(src_file.name)
+                        continue
+
+                    shutil.copy2(src_file, dst_file)
+                    if dst_file.exists() and src_file.name in skipped:
+                        skipped.remove(src_file.name)
+
+                    if overwrite and dst_file.exists():
+                        overwritten.append(src_file.name)
+                    else:
+                        imported.append(src_file.name)
+            except Exception as e:
+                print(f"[sd-webui-prompt-all-in-one] Import skipped for {candidate}: {e}")
+
+        return {
+            'sources_found': sources_found,
+            'imported': sorted(set(imported)),
+            'overwritten': sorted(set(overwritten)),
+            'skipped': sorted(set(skipped)),
+        }
+
+    def __auto_import_storage(storage_path):
+        sentinel = os.path.join(storage_path, '.auto_import_done')
+        if os.path.exists(sentinel):
+            return
+
+        result = Storage.import_from_old(overwrite=False)
+
+        try:
+            with open(sentinel, 'w', encoding='utf8') as f:
+                f.write('1')
+        except Exception:
+            pass
+
+        count = len(result['imported'])
+        if count:
+            print('[sd-webui-prompt-all-in-one] Storage auto import completed.')
+            print(f'  imported files: {count}')
+            for name in result['imported']:
+                print(f'  - {name}')
+        else:
+            print('[sd-webui-prompt-all-in-one] Storage auto import: nothing to import.')
+
+    def __get_storage_path(skip_auto_import=False):
         Storage.storage_path = os.path.dirname(os.path.abspath(__file__)) + '/../../storage'
         Storage.storage_path = os.path.normpath(Storage.storage_path)
         if not os.path.exists(Storage.storage_path):
             os.makedirs(Storage.storage_path)
 
-        # old_storage_path = os.path.join(Path().absolute(), 'physton-prompt')
-        # if os.path.exists(old_storage_path):
-        #     # 复制就的存储文件到新的存储文件夹
-        #     for file in os.listdir(old_storage_path):
-        #         old_file_path = os.path.join(old_storage_path, file)
-        #         new_file_path = os.path.join(Storage.storage_path, file)
-        #         if not os.path.exists(new_file_path):
-        #             os.rename(old_file_path, new_file_path)
-        #     # 删除旧的存储文件夹
-        #     os.rmdir(old_storage_path)
+        if not skip_auto_import:
+            Storage.__auto_import_storage(Storage.storage_path)
 
         return Storage.storage_path
 
@@ -37,7 +114,6 @@ class Storage:
     def __dispose_all_locks():
         directory = Storage.__get_storage_path()
         for filename in os.listdir(directory):
-            # 检查文件是否以指定后缀结尾
             if filename.endswith('.lock'):
                 file_path = os.path.join(directory, filename)
                 try:
@@ -116,7 +192,6 @@ class Storage:
             data = []
         return data
 
-    # 向列表中添加元素
     def list_push(key, item):
         while Storage.__is_locked(key):
             time.sleep(0.01)
@@ -130,7 +205,6 @@ class Storage:
             Storage.__unlock(key)
             raise e
 
-    # 从列表中删除和返回最后一个元素
     def list_pop(key):
         while Storage.__is_locked(key):
             time.sleep(0.01)
@@ -145,7 +219,6 @@ class Storage:
             Storage.__unlock(key)
             raise e
 
-    # 从列表中删除和返回第一个元素
     def list_shift(key):
         while Storage.__is_locked(key):
             time.sleep(0.01)
@@ -160,7 +233,6 @@ class Storage:
             Storage.__unlock(key)
             raise e
 
-    # 从列表中删除指定元素
     def list_remove(key, index):
         while Storage.__is_locked(key):
             time.sleep(0.01)
@@ -170,12 +242,10 @@ class Storage:
         Storage.__set(key, data)
         Storage.__unlock(key)
 
-    # 获取列表中指定位置的元素
     def list_get(key, index):
         data = Storage.__get_list(key)
         return data[index]
 
-    # 清空列表中的所有元素
     def list_clear(key):
         while Storage.__is_locked(key):
             time.sleep(0.01)
