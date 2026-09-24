@@ -1,5 +1,26 @@
 This is sd-webui-prompt-all-in-one for the latest version of [Forge Neo](https://github.com/Haoming02/sd-webui-forge-classic/tree/neo), adapted for the latest Python 3.13 fixes, using Vibe coding.
 
+## Forge Neo local mBART + data migration fixes
+
+This fork adds several Forge Neo compatibility and migration improvements:
+
+- fixes local mBART50 model discovery;
+- supports local mBART weights stored as `pytorch_model.bin`, `model.safetensors`,
+  or sharded index files;
+- can reuse the mBART model from a sibling `sd-webui-prompt-all-in-one` install;
+- prints mBART initialization and translation tracebacks to the Forge console;
+- fixes the wait logic when mBART initialization is already in progress;
+- automatically imports missing JSON storage data from older sibling installs once;
+- adds a **Prompt AIO Import** tab for manual import;
+- manual import can optionally overwrite existing JSON data.
+
+The safe default is non-destructive: existing files are preserved unless overwrite
+is explicitly enabled.
+
+Based on the Forge Neo fork by abzaloff and the original project by Physton.
+
+---
+
 # sd-webui-prompt-all-in-one
 
 [![GitHub stars](https://img.shields.io/github/stars/Physton/sd-webui-prompt-all-in-one?style=flat-square)](https://github.com/Physton/sd-webui-prompt-all-in-one/stargazers)
