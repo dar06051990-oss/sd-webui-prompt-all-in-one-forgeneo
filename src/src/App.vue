@@ -1207,6 +1207,7 @@ export default {
             this.hotkey = data
         },
         onShowExtraNetworks(e, name, useCallback, showCheckpoints, from) {
+            if (!this.enableTooltip) return
             this.$refs.extraNetworksPopup.show(e, name, useCallback, showCheckpoints, from)
         },
         onHideExtraNetworks() {
