@@ -42,6 +42,7 @@ export default {
             favorites: [],
             autoInputPrompt: 'disabled',
             autoInputPromptKey: '',
+            autoInputPromptLastKey: '',
         }
     },
     computed: {
@@ -543,7 +544,18 @@ export default {
             })
             return favorites
         },
+        saveAutoInputPromptState() {
+            if (this.autoInputPrompt !== 'last') return
+            if (!this.autoInputPromptLastKey) return
+            const value = this.textarea ? this.textarea.value : (this.prompt || '')
+            this.gradioAPI.setData(this.autoInputPromptLastKey, value).catch(() => {
+            })
+        },
         onAutoInputPromptChange() {
+            if (this.autoInputPrompt === 'last') {
+                // Capture the current prompt immediately, including an empty prompt.
+                this.saveAutoInputPromptState()
+            }
             this.gradioAPI.setData(this.autoInputPromptKey, this.autoInputPrompt).then(() => {
                 this.$toastr.success(this.getLang('success'))
             }).catch(() => {
@@ -552,12 +564,24 @@ export default {
         },
         initAutoInputPrompt() {
             this.autoInputPromptKey = 'autoInputPrompt-' + this.name
+            this.autoInputPromptLastKey = 'lastInputPrompt-' + this.name
             this.gradioAPI.getData(this.autoInputPromptKey).then(res => {
                 if (res === null) return
                 this.autoInputPrompt = res
                 if (this.autoInputPrompt === 'last') {
-                    this.gradioAPI.getLatestHistory(this.historyKey).then(res => {
-                        this.useHistory(res)
+                    // "Last input prompt" must restore the actual last editor state,
+                    // not the latest non-empty history record. Empty is a valid state.
+                    this.gradioAPI.getData(this.autoInputPromptLastKey).then(lastPrompt => {
+                        if (lastPrompt !== null) {
+                            if (typeof lastPrompt === 'string') {
+                                this.useChatgpt(lastPrompt)
+                            } else if (lastPrompt && typeof lastPrompt.prompt === 'string') {
+                                this.useChatgpt(lastPrompt.prompt)
+                            }
+                        } else {
+                            // First run after this fix: preserve whatever Forge currently has.
+                            this.saveAutoInputPromptState()
+                        }
                     })
                 } else {
                     const getFavorites = () => {
