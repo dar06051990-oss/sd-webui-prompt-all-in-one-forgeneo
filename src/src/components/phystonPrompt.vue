@@ -1097,6 +1097,9 @@ export default {
         updateTags() {
             console.log('tags change', this.tags)
             this.updatePrompt()
+            if (typeof this.saveAutoInputPromptState === 'function') {
+                this.saveAutoInputPromptState()
+            }
             const steps = this.steps.querySelector('input[type="number"]').value
             if (!this.$appMode) {
                 this.gradioAPI.tokenCounter(this.textarea.value, steps).then(res => {
