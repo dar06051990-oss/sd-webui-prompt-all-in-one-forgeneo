@@ -52,8 +52,21 @@ class History:
     def get_favorites(self, type):
         return self.favorites[type]
 
+    @staticmethod
+    def _history_limit():
+        """Live Forge Settings value. 0 means unlimited; old installs default to 100."""
+        try:
+            from modules import shared
+            limit = int(getattr(shared.opts, 'prompt_aio_history_limit', History.max))
+            return max(0, limit)
+        except (AttributeError, TypeError, ValueError):
+            return History.max
+
     def push_history(self, type, tags, prompt, name=''):
-        if len(self.histories[type]) >= self.max:
+        limit = self._history_limit()
+        # Imported history may already exceed the selected limit. Remove at
+        # most one old entry per NEW item, never truncate the entire archive.
+        if limit > 0 and len(self.histories[type]) >= limit:
             self.histories[type].pop(0)
         item = {
             'id': str(uuid.uuid1()),
