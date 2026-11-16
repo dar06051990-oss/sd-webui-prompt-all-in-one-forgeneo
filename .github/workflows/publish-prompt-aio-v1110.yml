@@ -121,7 +121,7 @@ jobs:
           with zipfile.ZipFile('Prompt-AIO-v1.1.10-FORGENEO-update.zip','w',compression=zipfile.ZIP_DEFLATED) as archive:
               for source in paths:
                   archive.write(source,'sd-webui-prompt-all-in-one-forgeneo/'+source)
-          Path('FORGENEO-RELEASE-v1.1.10.md').write_text(ru_note+'\n---\n\n'+en_note,encoding='utf-8')
+          Path('FORGENEO-RELEASE-v1.1.10.md').write_text((ru_note+'\n---\n\n'+en_note).rstrip()+'\n',encoding='utf-8')
           PY
       - name: Commit release source
         shell: bash
