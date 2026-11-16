@@ -128,7 +128,8 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add scripts/physton_prompt/history.py scripts/physton_prompt/storage.py scripts/physton_prompt/portable.py scripts/storage_import_ui.py javascript/prompt-aio-responsive-tags.js README.MD README_RU.MD FORGENEO-RELEASE-v1.1.10.md
+          git add scripts/physton_prompt/history.py scripts/physton_prompt/storage.py scripts/physton_prompt/portable.py scripts/storage_import_ui.py README.MD README_RU.MD FORGENEO-RELEASE-v1.1.10.md
+          git add -f javascript/prompt-aio-responsive-tags.js
           git diff --cached --check
           git diff --cached --quiet && { echo 'No release changes found'; exit 1; }
           git commit -m 'feat(forge-neo): Prompt AIO v1.1.10 import, history and layout improvements'
